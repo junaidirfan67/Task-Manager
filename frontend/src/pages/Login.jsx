@@ -1,4 +1,4 @@
-import { CheckSquare } from "lucide-react";
+import { BriefcaseBusiness, LogIn } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -21,7 +21,7 @@ function Login() {
 
     try {
       await login(form);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Unable to log in");
     } finally {
@@ -30,14 +30,14 @@ function Login() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-blue-50 px-4 py-10">
       <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-slate-950 text-white">
-            <CheckSquare size={22} aria-hidden="true" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-blue-700 text-white">
+            <BriefcaseBusiness size={22} aria-hidden="true" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-500">Task Manager</p>
+            <p className="text-sm font-semibold text-slate-500">HireHub</p>
             <h1 className="text-2xl font-bold text-slate-950">Sign in</h1>
           </div>
         </div>
@@ -68,13 +68,14 @@ function Login() {
           </div>
 
           <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+            <LogIn size={18} aria-hidden="true" />
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
         <p className="mt-5 text-center text-sm text-slate-600">
           Need an account?{" "}
-          <Link to="/register" className="font-bold text-slate-950 underline-offset-4 hover:underline">
+          <Link to="/register" className="font-bold text-blue-700 underline-offset-4 hover:underline">
             Create one
           </Link>
         </p>

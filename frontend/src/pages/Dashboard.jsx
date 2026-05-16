@@ -1,86 +1,182 @@
-import {
-  AlertCircle,
-  BarChart3,
-  CheckCircle2,
-  ClipboardList,
-  Clock3,
-  LayoutDashboard,
-  ListChecks,
-  LogOut,
-  Plus,
-  Search,
-  SlidersHorizontal
-} from "lucide-react";
+import { BriefcaseBusiness, Building2, CheckCircle2, FileText, LayoutDashboard, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../api/axios";
-import TaskCard from "../components/TaskCard";
-import TaskForm from "../components/TaskForm";
+import JobForm from "../components/JobForm";
+import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 
-const defaultStats = {
-  total: 0,
-  todo: 0,
-  inProgress: 0,
-  completed: 0,
-  overdue: 0,
-  byPriority: { low: 0, medium: 0, high: 0 }
+const statusLabels = {
+  applied: "Applied",
+  reviewing: "Reviewing",
+  interview: "Interview",
+  offer: "Offer",
+  rejected: "Rejected"
 };
 
-const statCards = [
-  { key: "total", label: "Total", icon: ClipboardList },
-  { key: "todo", label: "To do", icon: Clock3 },
-  { key: "inProgress", label: "In progress", icon: AlertCircle },
-  { key: "completed", label: "Completed", icon: CheckCircle2 }
-];
+const statusClasses = {
+  applied: "bg-slate-100 text-slate-700",
+  reviewing: "bg-blue-50 text-blue-700",
+  interview: "bg-cyan-50 text-cyan-700",
+  offer: "bg-indigo-50 text-indigo-700",
+  rejected: "bg-rose-50 text-rose-700"
+};
 
-const statusFilters = [
-  { value: "all", label: "All tasks" },
-  { value: "todo", label: "To do" },
-  { value: "in-progress", label: "In progress" },
-  { value: "completed", label: "Completed" }
-];
+function formatDate(value) {
+  if (!value) return "New";
 
-function completionRate(stats) {
-  return stats.total ? Math.round((stats.completed / stats.total) * 100) : 0;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(new Date(value));
 }
 
-function Dashboard() {
-  const { logout, user } = useAuth();
-  const [tasks, setTasks] = useState([]);
-  const [stats, setStats] = useState(defaultStats);
-  const [filters, setFilters] = useState({ status: "all", priority: "all", sort: "newest", search: "" });
-  const [editingTask, setEditingTask] = useState(null);
+function StatCard({ label, value, icon: Icon, tone = "slate" }) {
+  const toneClasses = {
+    slate: "bg-slate-100 text-slate-700",
+    emerald: "bg-blue-50 text-blue-700",
+    amber: "bg-cyan-50 text-cyan-700",
+    sky: "bg-indigo-50 text-indigo-700"
+  };
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-sm font-bold text-slate-500">{label}</p>
+        <span className={`flex h-9 w-9 items-center justify-center rounded-md ${toneClasses[tone]}`}>
+          <Icon size={18} aria-hidden="true" />
+        </span>
+      </div>
+      <p className="text-3xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function CandidateDashboard() {
+  const { user } = useAuth();
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadApplications = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const { data } = await api.get("/applications/me");
+      setApplications(data.applications);
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to load applications");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadApplications();
+  }, []);
+
+  const stats = useMemo(
+    () => ({
+      total: applications.length,
+      interviews: applications.filter((application) => application.status === "interview").length,
+      offers: applications.filter((application) => application.status === "offer").length
+    }),
+    [applications]
+  );
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard label="Applications" value={stats.total} icon={FileText} tone="slate" />
+        <StatCard label="Interviews" value={stats.interviews} icon={Users} tone="amber" />
+        <StatCard label="Offers" value={stats.offers} icon={CheckCircle2} tone="emerald" />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-md bg-blue-700 text-white">
+              <LayoutDashboard size={21} aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-black text-slate-950">{user?.name}</h2>
+              <p className="truncate text-sm font-bold text-slate-500">{user?.headline || user?.email}</p>
+            </div>
+          </div>
+          {user?.location ? <p className="mb-3 text-sm font-bold text-slate-600">{user.location}</p> : null}
+          {user?.skills?.length ? (
+            <div className="flex flex-wrap gap-2">
+              {user.skills.map((skill) => (
+                <span key={skill} className="badge bg-slate-100 text-slate-700">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          <Link to="/jobs" className="btn btn-primary mt-5 w-full">
+            Browse jobs
+          </Link>
+        </aside>
+
+        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 p-4">
+            <h2 className="text-xl font-black text-slate-950">Applications</h2>
+          </div>
+          {error ? <div className="m-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{error}</div> : null}
+          {loading ? (
+            <div className="p-8 text-center text-sm font-bold text-slate-500">Loading applications...</div>
+          ) : applications.length ? (
+            <div className="divide-y divide-slate-200">
+              {applications.map((application) => (
+                <article key={application._id} className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_140px_130px] md:items-center">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-black text-slate-950">{application.job?.title}</h3>
+                    <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                      {application.job?.company} · {application.job?.location}
+                    </p>
+                  </div>
+                  <span className={`badge w-fit ${statusClasses[application.status]}`}>{statusLabels[application.status]}</span>
+                  <p className="text-sm font-bold text-slate-500 md:text-right">{formatDate(application.createdAt)}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <FileText className="mx-auto mb-3 text-slate-400" size={34} aria-hidden="true" />
+              <h3 className="text-lg font-black text-slate-950">No applications yet</h3>
+              <Link to="/jobs" className="btn btn-primary mt-4">
+                Find jobs
+              </Link>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function EmployerDashboard() {
+  const { user } = useAuth();
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [editingJob, setEditingJob] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const queryParams = useMemo(() => {
-    const params = new URLSearchParams();
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params.append(key, value);
-      }
-    });
-
-    return params.toString();
-  }, [filters]);
-
   const loadDashboard = async () => {
-    setError("");
     setLoading(true);
+    setError("");
 
     try {
-      const [tasksResponse, statsResponse] = await Promise.all([
-        api.get(`/tasks?${queryParams}`),
-        api.get("/tasks/stats")
-      ]);
-
-      setTasks(tasksResponse.data.tasks);
-      setStats(statsResponse.data.stats);
+      const [jobsResponse, applicationsResponse] = await Promise.all([api.get("/jobs/employer/mine"), api.get("/applications/employer")]);
+      setJobs(jobsResponse.data.jobs);
+      setApplications(applicationsResponse.data.applications);
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to load tasks");
+      setError(err.response?.data?.message || "Unable to load dashboard");
     } finally {
       setLoading(false);
     }
@@ -88,328 +184,179 @@ function Dashboard() {
 
   useEffect(() => {
     loadDashboard();
-  }, [queryParams]);
+  }, []);
 
-  const updateFilter = (event) => {
-    setFilters((current) => ({
-      ...current,
-      [event.target.name]: event.target.value
-    }));
+  const stats = useMemo(
+    () => ({
+      jobs: jobs.length,
+      active: jobs.filter((job) => job.status === "active").length,
+      applicants: applications.length
+    }),
+    [applications.length, jobs]
+  );
+
+  const startCreate = () => {
+    setEditingJob(null);
+    setShowForm(true);
   };
 
-  const setStatusFilter = (status) => {
-    setFilters((current) => ({
-      ...current,
-      status
-    }));
-  };
-
-  const saveTask = async (payload) => {
+  const saveJob = async (payload) => {
     setSaving(true);
     setError("");
 
     try {
-      if (editingTask) {
-        await api.put(`/tasks/${editingTask._id}`, payload);
+      if (editingJob) {
+        await api.put(`/jobs/${editingJob._id}`, payload);
       } else {
-        await api.post("/tasks", payload);
+        await api.post("/jobs", payload);
       }
 
       setShowForm(false);
-      setEditingTask(null);
+      setEditingJob(null);
       await loadDashboard();
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to save task");
+      setError(err.response?.data?.message || "Unable to save job");
     } finally {
       setSaving(false);
     }
   };
 
-  const deleteTask = async (taskId) => {
-    const confirmed = window.confirm("Delete this task?");
-
-    if (!confirmed) {
-      return;
-    }
+  const deleteJob = async (jobId) => {
+    if (!window.confirm("Delete this job?")) return;
 
     try {
-      await api.delete(`/tasks/${taskId}`);
+      await api.delete(`/jobs/${jobId}`);
       await loadDashboard();
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to delete task");
+      setError(err.response?.data?.message || "Unable to delete job");
     }
   };
 
-  const quickComplete = async (task) => {
+  const updateStatus = async (applicationId, status) => {
     try {
-      await api.put(`/tasks/${task._id}`, { status: "completed" });
+      await api.patch(`/applications/${applicationId}/status`, { status });
       await loadDashboard();
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to update task");
+      setError(err.response?.data?.message || "Unable to update application");
     }
-  };
-
-  const startEdit = (task) => {
-    setEditingTask(task);
-    setShowForm(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const startCreate = () => {
-    setEditingTask(null);
-    setShowForm((current) => !current);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 lg:pl-72">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-zinc-200 bg-white lg:flex">
-        <div className="flex h-16 items-center gap-3 border-b border-zinc-200 px-5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-teal-700 text-white">
-            <ListChecks size={21} aria-hidden="true" />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-zinc-500">Task Manager</p>
-            <h1 className="truncate text-lg font-bold text-zinc-950">Classic Desk</h1>
-          </div>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-wide text-blue-700">{user?.company || "Employer"}</p>
+          <h1 className="text-3xl font-black text-slate-950">Hiring dashboard</h1>
         </div>
+        <button type="button" onClick={startCreate} className="btn btn-primary">
+          <Plus size={18} aria-hidden="true" />
+          Post job
+        </button>
+      </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
-          <div>
-            <p className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-zinc-400">Views</p>
-            <div className="space-y-1">
-              {statusFilters.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setStatusFilter(item.value)}
-                  className={`flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold transition ${
-                    filters.status === item.value ? "bg-teal-50 text-teal-800" : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  <LayoutDashboard size={17} aria-hidden="true" />
-                  <span className="truncate">{item.label}</span>
-                </button>
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard label="Posted jobs" value={stats.jobs} icon={BriefcaseBusiness} tone="slate" />
+        <StatCard label="Active roles" value={stats.active} icon={Building2} tone="emerald" />
+        <StatCard label="Applicants" value={stats.applicants} icon={Users} tone="sky" />
+      </div>
+
+      {error ? <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{error}</div> : null}
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 p-4">
+            <h2 className="text-xl font-black text-slate-950">Jobs</h2>
+          </div>
+          {loading ? (
+            <div className="p-8 text-center text-sm font-bold text-slate-500">Loading jobs...</div>
+          ) : jobs.length ? (
+            <div className="divide-y divide-slate-200">
+              {jobs.map((job) => (
+                <article key={job._id} className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_110px_110px_120px] lg:items-center">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-black text-slate-950">{job.title}</h3>
+                    <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                      {job.location} · {job.type} · {job.workplace}
+                    </p>
+                  </div>
+                  <span className={`badge w-fit ${job.status === "active" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-700"}`}>
+                    {job.status}
+                  </span>
+                  <p className="text-sm font-bold text-slate-500">{job.applicantCount || 0} applicants</p>
+                  <div className="flex gap-2 lg:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingJob(job);
+                        setShowForm(true);
+                      }}
+                      className="btn btn-secondary h-9 w-9 p-0"
+                      title="Edit job"
+                    >
+                      <Pencil size={16} aria-hidden="true" />
+                    </button>
+                    <button type="button" onClick={() => deleteJob(job._id)} className="btn btn-danger h-9 w-9 p-0" title="Delete job">
+                      <Trash2 size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                </article>
               ))}
             </div>
-          </div>
-
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-bold text-zinc-700">Progress</p>
-              <BarChart3 size={17} className="text-teal-700" aria-hidden="true" />
+          ) : (
+            <div className="p-8 text-center">
+              <BriefcaseBusiness className="mx-auto mb-3 text-slate-400" size={34} aria-hidden="true" />
+              <h3 className="text-lg font-black text-slate-950">No jobs posted</h3>
             </div>
-            <div className="mb-2 flex items-end gap-2">
-              <span className="text-3xl font-bold text-zinc-950">{completionRate(stats)}%</span>
-              <span className="pb-1 text-sm font-semibold text-zinc-500">complete</span>
-            </div>
-            <div className="h-2 rounded-full bg-white">
-              <div className="h-2 rounded-full bg-teal-600" style={{ width: `${completionRate(stats)}%` }} />
-            </div>
-          </div>
-        </div>
+          )}
+        </section>
 
-        <div className="border-t border-zinc-200 p-4">
-          <div className="mb-3 min-w-0">
-            <p className="truncate text-sm font-bold text-zinc-950">{user?.name}</p>
-            <p className="truncate text-xs font-semibold text-zinc-500">{user?.email}</p>
-          </div>
-          <button type="button" onClick={logout} className="btn btn-secondary w-full" title="Log out">
-            <LogOut size={18} aria-hidden="true" />
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 backdrop-blur lg:hidden">
-        <div className="flex min-h-16 items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-teal-700 text-white">
-              <ListChecks size={21} aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-xs font-semibold text-zinc-500">Task Manager</p>
-              <h1 className="truncate text-base font-bold text-zinc-950">Hi, {user?.name}</h1>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button type="button" onClick={startCreate} className="btn btn-primary h-10 w-10 p-0" title="New task">
-              <Plus size={18} aria-hidden="true" />
-            </button>
-            <button type="button" onClick={logout} className="btn btn-secondary h-10 w-10 p-0" title="Log out">
-              <LogOut size={18} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="min-w-0">
-        <div className="hidden h-16 items-center justify-between border-b border-zinc-200 bg-white px-6 lg:flex">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-zinc-500">Dashboard</p>
-            <h2 className="truncate text-xl font-bold text-zinc-950">Tasks and productivity</h2>
-          </div>
-          <button type="button" onClick={startCreate} className="btn btn-primary">
-            <Plus size={18} aria-hidden="true" />
-            New task
-          </button>
-        </div>
-
-        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-6 xl:px-8">
-          <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-            {statCards.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <div key={item.key} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="truncate text-sm font-semibold text-zinc-500">{item.label}</p>
-                    <Icon size={18} className="shrink-0 text-zinc-400" aria-hidden="true" />
+        <aside className="order-first space-y-5 xl:order-none xl:sticky xl:top-20 xl:self-start">
+          {showForm ? (
+            <JobForm
+              initialJob={editingJob}
+              onSubmit={saveJob}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingJob(null);
+              }}
+              saving={saving}
+              user={user}
+            />
+          ) : (
+            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-xl font-black text-slate-950">Applicants</h2>
+              <div className="mt-4 space-y-3">
+                {applications.slice(0, 5).map((application) => (
+                  <div key={application._id} className="rounded-lg border border-slate-200 p-3">
+                    <p className="truncate text-sm font-black text-slate-950">{application.candidate?.name}</p>
+                    <p className="mt-1 truncate text-xs font-bold text-slate-500">{application.job?.title}</p>
+                    <select value={application.status} onChange={(event) => updateStatus(application._id, event.target.value)} className="field mt-3 h-10">
+                      {Object.entries(statusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <p className="text-2xl font-bold text-zinc-950 sm:text-3xl">{stats[item.key]}</p>
-                </div>
-              );
-            })}
-          </section>
-
-          <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="min-w-0 space-y-4">
-              <div className="rounded-lg border border-zinc-200 bg-white shadow-sm">
-                <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <SlidersHorizontal size={18} className="shrink-0 text-teal-700" aria-hidden="true" />
-                    <h3 className="truncate text-base font-bold text-zinc-950">Task board</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {statusFilters.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setStatusFilter(item.value)}
-                        className={`h-9 rounded-md px-3 text-sm font-semibold transition ${
-                          filters.status === item.value
-                            ? "bg-teal-700 text-white"
-                            : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_150px_150px_150px]">
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={17} />
-                    <input
-                      name="search"
-                      value={filters.search}
-                      onChange={updateFilter}
-                      className="field pl-9"
-                      placeholder="Search tasks"
-                    />
-                  </div>
-                  <select name="status" value={filters.status} onChange={updateFilter} className="field">
-                    <option value="all">All status</option>
-                    <option value="todo">To do</option>
-                    <option value="in-progress">In progress</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                  <select name="priority" value={filters.priority} onChange={updateFilter} className="field">
-                    <option value="all">All priority</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                  <select name="sort" value={filters.sort} onChange={updateFilter} className="field">
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="dueDate">Due date</option>
-                    <option value="priority">Priority</option>
-                  </select>
-                </div>
+                ))}
+                {!applications.length ? <p className="text-sm font-bold text-slate-500">No applicants yet.</p> : null}
               </div>
+            </section>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}
 
-              {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+function Dashboard() {
+  const { user } = useAuth();
 
-              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-                <div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_150px_122px] gap-4 border-b border-zinc-200 bg-zinc-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500 md:grid">
-                  <span>Task</span>
-                  <span>Status</span>
-                  <span>Priority</span>
-                  <span>Due date</span>
-                  <span className="text-right">Actions</span>
-                </div>
-
-                {loading ? (
-                  <div className="p-8 text-center text-sm font-semibold text-zinc-500">Loading tasks...</div>
-                ) : tasks.length > 0 ? (
-                  <div className="divide-y divide-zinc-200">
-                    {tasks.map((task) => (
-                      <TaskCard
-                        key={task._id}
-                        task={task}
-                        onDelete={deleteTask}
-                        onEdit={startEdit}
-                        onQuickComplete={quickComplete}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center">
-                    <ClipboardList className="mx-auto mb-3 text-zinc-400" size={34} aria-hidden="true" />
-                    <h3 className="text-lg font-bold text-zinc-950">No tasks found</h3>
-                    <p className="mt-1 text-sm text-zinc-500">Create a task or adjust your filters.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <aside className="order-first space-y-4 xl:order-none xl:sticky xl:top-20 xl:self-start">
-              {showForm ? (
-                <TaskForm
-                  initialTask={editingTask}
-                  onCancel={() => {
-                    setShowForm(false);
-                    setEditingTask(null);
-                  }}
-                  onSubmit={saveTask}
-                  saving={saving}
-                />
-              ) : (
-                <button type="button" onClick={startCreate} className="btn btn-primary hidden w-full xl:inline-flex">
-                  <Plus size={18} aria-hidden="true" />
-                  Create task
-                </button>
-              )}
-
-              <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-                <h3 className="mb-3 text-base font-bold text-zinc-950">Priority mix</h3>
-                <div className="space-y-3">
-                  {["high", "medium", "low"].map((priority) => (
-                    <div key={priority}>
-                      <div className="mb-1 flex items-center justify-between text-sm font-semibold capitalize text-zinc-600">
-                        <span>{priority}</span>
-                        <span>{stats.byPriority?.[priority] || 0}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-zinc-100">
-                        <div
-                          className={`h-2 rounded-full ${priority === "high" ? "bg-red-500" : priority === "medium" ? "bg-amber-500" : "bg-emerald-500"}`}
-                          style={{ width: `${stats.total ? ((stats.byPriority?.[priority] || 0) / stats.total) * 100 : 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {stats.overdue > 0 ? (
-                  <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
-                    {stats.overdue} overdue task{stats.overdue === 1 ? "" : "s"}
-                  </div>
-                ) : null}
-              </div>
-            </aside>
-          </section>
-        </div>
+  return (
+    <div className="min-h-screen bg-blue-50 text-slate-950">
+      <Navbar />
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {user?.role === "employer" ? <EmployerDashboard /> : <CandidateDashboard />}
       </main>
     </div>
   );

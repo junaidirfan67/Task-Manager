@@ -11,8 +11,29 @@ function serializeUser(user) {
   return {
     id: getUserId(user),
     name: user.name,
-    email: user.email
+    email: user.email,
+    role: user.role || "candidate",
+    skills: Array.isArray(user.skills) ? user.skills : [],
+    resume: user.resume || "",
+    company: user.company || "",
+    headline: user.headline || "",
+    location: user.location || ""
   };
+}
+
+function normalizeSkills(skills) {
+  if (Array.isArray(skills)) {
+    return skills.map((skill) => String(skill).trim()).filter(Boolean);
+  }
+
+  if (typeof skills === "string") {
+    return skills
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+  }
+
+  return [];
 }
 
 async function findUserByEmail(email, options = {}) {
@@ -41,9 +62,21 @@ async function findUserById(id) {
   return user ? serializeUser(user) : null;
 }
 
-async function createUser({ name, email, password }) {
+async function createUser({ name, email, password, role, skills, resume, company, headline, location }) {
+  const payload = {
+    name: name.trim(),
+    email,
+    password,
+    role: role || "candidate",
+    skills: normalizeSkills(skills),
+    resume: resume || "",
+    company: company || "",
+    headline: headline || "",
+    location: location || ""
+  };
+
   if (!useLocalStore()) {
-    return User.create({ name, email, password });
+    return User.create(payload);
   }
 
   const db = await readDb();
@@ -51,8 +84,7 @@ async function createUser({ name, email, password }) {
   const passwordHash = await bcrypt.hash(password, 10);
   const user = {
     id: createId(),
-    name: name.trim(),
-    email,
+    ...payload,
     password: passwordHash,
     createdAt: now,
     updatedAt: now

@@ -1,7 +1,7 @@
 {
-  "name": "task-manager-backend",
+  "name": "hirehub-backend",
   "version": "1.0.0",
-  "description": "Express API for a full-stack task management app",
+  "description": "Express API for the HireHub MERN job portal",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,7 +11,8 @@
     "express",
     "mongodb",
     "jwt",
-    "tasks"
+    "jobs",
+    "applications"
   ],
   "author": "",
   "license": "MIT",

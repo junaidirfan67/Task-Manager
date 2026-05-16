@@ -21,6 +21,39 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       minlength: 6,
       select: false
+    },
+    role: {
+      type: String,
+      enum: ["candidate", "employer", "admin"],
+      default: "candidate",
+      index: true
+    },
+    skills: {
+      type: [String],
+      default: []
+    },
+    resume: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    company: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+      default: ""
+    },
+    headline: {
+      type: String,
+      trim: true,
+      maxlength: 160,
+      default: ""
+    },
+    location: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+      default: ""
     }
   },
   { timestamps: true }

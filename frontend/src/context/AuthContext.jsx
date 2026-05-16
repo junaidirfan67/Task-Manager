@@ -5,7 +5,7 @@ const AuthContext = createContext(null);
 
 function readStoredUser() {
   try {
-    const value = localStorage.getItem("task_manager_user");
+    const value = localStorage.getItem("hirehub_user");
     return value ? JSON.parse(value) : null;
   } catch {
     return null;
@@ -14,11 +14,11 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(readStoredUser);
-  const [token, setToken] = useState(localStorage.getItem("task_manager_token"));
+  const [token, setToken] = useState(localStorage.getItem("hirehub_token"));
 
   const saveSession = (payload) => {
-    localStorage.setItem("task_manager_token", payload.token);
-    localStorage.setItem("task_manager_user", JSON.stringify(payload.user));
+    localStorage.setItem("hirehub_token", payload.token);
+    localStorage.setItem("hirehub_user", JSON.stringify(payload.user));
     setToken(payload.token);
     setUser(payload.user);
   };
@@ -34,8 +34,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("task_manager_token");
-    localStorage.removeItem("task_manager_user");
+    localStorage.removeItem("hirehub_token");
+    localStorage.removeItem("hirehub_user");
     setToken(null);
     setUser(null);
   };

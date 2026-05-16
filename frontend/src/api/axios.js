@@ -8,7 +8,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("task_manager_token");
+  const token = localStorage.getItem("hirehub_token");
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -21,8 +21,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("task_manager_token");
-      localStorage.removeItem("task_manager_user");
+      localStorage.removeItem("hirehub_token");
+      localStorage.removeItem("hirehub_user");
     }
 
     return Promise.reject(error);

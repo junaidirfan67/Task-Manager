@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #18181b;
-  background: #fafafa;
+  color: #0f172a;
+  background: #eff6ff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,30 +26,38 @@ textarea {
 
 @layer components {
   .btn {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-primary {
-    @apply bg-teal-700 text-white hover:bg-teal-800;
+    @apply bg-blue-700 text-white hover:bg-blue-800;
   }
 
   .btn-secondary {
-    @apply border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50;
+    @apply border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
   }
 
   .btn-danger {
-    @apply border border-red-200 bg-red-50 text-red-700 hover:bg-red-100;
+    @apply border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100;
+  }
+
+  .btn-accent {
+    @apply bg-cyan-600 text-white hover:bg-cyan-700;
   }
 
   .field {
-    @apply h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100;
+    @apply h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100;
   }
 
   .textarea-field {
-    @apply min-h-24 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100;
+    @apply min-h-28 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100;
   }
 
   .label {
-    @apply text-sm font-semibold text-zinc-700;
+    @apply text-sm font-bold text-slate-700;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-md px-2 py-1 text-xs font-bold;
   }
 }

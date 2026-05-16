@@ -5,8 +5,9 @@ dotenv.config();
 const cors = require("cors");
 const express = require("express");
 const connectDB = require("./config/db");
+const applicationRoutes = require("./routes/applicationRoutes");
 const authRoutes = require("./routes/authRoutes");
-const taskRoutes = require("./routes/taskRoutes");
+const jobRoutes = require("./routes/jobRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -18,7 +19,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "replace_with_a_long_random_secret") {
-  process.env.JWT_SECRET = "dev-only-task-manager-secret";
+  process.env.JWT_SECRET = "dev-only-hirehub-secret";
   console.warn("JWT_SECRET is missing. Using a dev-only fallback secret.");
 }
 
@@ -38,18 +39,19 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", service: "task-manager-api" });
+  res.json({ status: "ok", service: "hirehub-api" });
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/tasks", taskRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/applications", applicationRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
 app.use((err, req, res, next) => {
-  let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  let statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
   let message = err.message || "Server error";
 
   if (err.name === "CastError") {

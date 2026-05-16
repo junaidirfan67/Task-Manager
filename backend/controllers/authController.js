@@ -8,6 +8,8 @@ const {
   serializeUser
 } = require("../services/userService");
 
+const allowedRoles = ["candidate", "employer"];
+
 function createToken(userId) {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d"
@@ -17,6 +19,7 @@ function createToken(userId) {
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
   const normalizedEmail = email?.trim().toLowerCase();
+  const role = req.body.role || "candidate";
 
   if (!name || !normalizedEmail || !password) {
     res.status(400);
@@ -28,6 +31,11 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("Password must be at least 6 characters");
   }
 
+  if (!allowedRoles.includes(role)) {
+    res.status(400);
+    throw new Error("Choose either candidate or employer");
+  }
+
   const existingUser = await findUserByEmail(normalizedEmail);
 
   if (existingUser) {
@@ -35,7 +43,17 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("An account with this email already exists");
   }
 
-  const user = await createUser({ name, email: normalizedEmail, password });
+  const user = await createUser({
+    name,
+    email: normalizedEmail,
+    password,
+    role,
+    skills: req.body.skills,
+    resume: req.body.resume,
+    company: req.body.company,
+    headline: req.body.headline,
+    location: req.body.location
+  });
 
   res.status(201).json({
     user: serializeUser(user),
