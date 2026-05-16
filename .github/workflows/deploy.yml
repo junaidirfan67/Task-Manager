@@ -31,7 +31,6 @@ jobs:
         working-directory: frontend
         env:
           VITE_DEMO_MODE: "true"
-          VITE_BASE_PATH: /Task-Manager/
         run: npm run build:pages
 
       - name: Publish to gh-pages
